@@ -13,11 +13,11 @@ jobs:
     steps:
       # Шаг 1: Клонирование репозитория
       - name: Checkout repository
-        uses: actions/checkout@v3  
+        uses: actions/checkout@v3
 
       # Шаг 2: Установка зависимостей
       - name: Install dependencies
-        run: sudo apt update && sudo apt install -y g++ make cmake python3  
+        run: sudo apt update && sudo apt install -y g++ make cmake python3
 
       # Шаг 3: Установка Google Test
       - name: Install Google Test
@@ -30,13 +30,15 @@ jobs:
 
       # Шаг 4: Сборка проекта (включая тесты)
       - name: Build project and tests
-        run: make
+        run: |
+          cd Assignment1
+          make
 
       # Шаг 5: Запуск тестов с использованием Google Test
       - name: Run C++ tests
-        run: ./test_runner  # Исполняемый файл тестов, созданный Makefile
+        run: cd Assignment1 && ./test_runner  # Исполняемый файл тестов, созданный Makefile
 
       # Шаг 6: Запуск тестов на Python
       - name: Run Python tests
-        run: python3 test_ascii85.py
+        run: cd Assignment1 && python3 test_ascii85.py
 
