@@ -15,6 +15,7 @@ void ascii85Decoder(std::istream& inputData, std::ostream& outputData) {
         }
 
         if (currentSymbol < 33 || currentSymbol > 117) {
+            std::cerr << "Invalid symbol encountered: " << currentSymbol << std::endl;
             throw std::runtime_error("Недопустимый символ в кодировке ASCII85");
         }
 

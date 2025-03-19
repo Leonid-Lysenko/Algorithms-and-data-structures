@@ -54,8 +54,12 @@ TEST(ASCII85Test, InvalidDecoding) {
     srand(time(nullptr));
     for (int i = 0; i < 5; ++i) {  
         std::string invalid_data = generate_random_string(20 + rand() % 30);
+        invalid_data += '@';
+
         std::istringstream input(invalid_data);
         std::ostringstream output;
+
+        std::cerr << "Testing invalid decoding with input: " << invalid_data << std::endl;
 
         EXPECT_THROW(ascii85Decoder(input, output), std::runtime_error);
     }
