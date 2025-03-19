@@ -1,0 +1,42 @@
+name: CI with Google Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Клонирование репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v3  
+
+      # Шаг 2: Установка зависимостей
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y g++ make cmake python3  
+
+      # Шаг 3: Установка Google Test
+      - name: Install Google Test
+        run: |
+          git clone https://github.com/google/googletest.git
+          cd googletest
+          cmake -S . -B build
+          cmake --build build
+          sudo cmake --install build  # Устанавливает Google Test глобально
+
+      # Шаг 4: Сборка проекта (включая тесты)
+      - name: Build project and tests
+        run: make
+
+      # Шаг 5: Запуск тестов с использованием Google Test
+      - name: Run C++ tests
+        run: ./test_runner  # Исполняемый файл тестов, созданный Makefile
+
+      # Шаг 6: Запуск тестов на Python
+      - name: Run Python tests
+        run: python3 test_ascii85.py
+
