@@ -7,29 +7,20 @@
 
 #include <Eigen/Dense>
 #include <string>
-#include <vector>
-#include <memory>
 
 class GaussSolver {
 public:
-    // Решение системы методом Гаусса с частичным выбором
+    // Решает систему Ax = b методом Гаусса
     static Eigen::VectorXd solve(const Eigen::MatrixXd& A, const Eigen::VectorXd& b);
     
-    // Оптимизированное чтение системы из CSV
-    static void readSystemFromCSV(const std::string& filename, 
-                                 Eigen::MatrixXd& A, 
-                                 Eigen::VectorXd& b);
+    // Читает матрицу A и вектор b из CSV файла
+    static void readSystemFromCSV(const std::string& filename, Eigen::MatrixXd& A, Eigen::VectorXd& b);
     
-    // Запись решения в CSV
-    static void writeSolutionToCSV(const std::string& filename, 
-                                  const Eigen::VectorXd& solution);
+    // Записывает решение в CSV файл
+    static void writeSolutionToCSV(const std::string& filename, const Eigen::VectorXd& solution);
     
-    // Генерация больших систем с контролем памяти
-    static void generateRandomSystem(Eigen::MatrixXd& A, 
-                                    Eigen::VectorXd& b, 
-                                    int size, 
-                                    unsigned int seed,
-                                    bool make_diagonally_dominant = true);
+    // Генрирует случайную систему уравнений
+    static void generateRandomSystem(Eigen::MatrixXd& A, Eigen::VectorXd& b, int size, unsigned int seed);
 };
 
 #endif

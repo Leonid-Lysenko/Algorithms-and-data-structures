@@ -3,48 +3,68 @@
 */
 
 #include "gauss_solver.h"
-#include <Eigen/Dense>
 #include <fstream>
-#include <random>
 #include <stdexcept>
+#include <random>
 #include <vector>
 
 Eigen::VectorXd GaussSolver::solve(const Eigen::MatrixXd& A, const Eigen::VectorXd& b) {
     const int n = A.rows();
     
-    if (n != A.cols() || n != b.size()) {
-        throw std::invalid_argument("Invalid matrix or vector dimensions");
-    }
+    // Проверяем, что матрица квадратная и размеры совпадают
+    if (n != A.cols() || n != b.size()) { throw std::invalid_argument("Хм-м-м... Неправильные размеры матрицы или вектора"); }
 
-    // Проверка на нулевую матрицу
-    if (A.isZero(1e-10)) {
-        throw std::runtime_error("Zero matrix encountered");
-    }
+    // Создаем расширенную матрицу, а именноо [A|b]
+    Eigen::MatrixXd Ab(n, n + 1);
+    Ab << A, b;
 
-    Eigen::PartialPivLU<Eigen::MatrixXd> lu(A);
-    
-    // Проверка на вырожденность через determinant
-    if (lu.determinant() == 0) {
-        throw std::runtime_error("Matrix is singular");
+    // Прямой ход метода Гаусса
+    for (int k = 0; k < n; ++k) {
+        // Ищем строку с максимальным элементом в текущем столбце
+        int max_row = k;
+        for (int i = k + 1; i < n; ++i) {
+            if (std::abs(Ab(i, k))>std::abs(Ab(max_row, k))) {
+                max_row = i;
+            }
+        }
+        
+        // Меняем строки местами, если нужно
+        if (max_row != k) { Ab.row(k).swap(Ab.row(max_row)); }
+        
+        // Проверяем, что главный элемент не нулевой
+        if (std::abs(Ab(k, k)) < 1e-10) { throw std::runtime_error("Матрица вырожденная, решение невозможно!"); }
+        
+        // Приводим матрицу к ступенчатому виду
+        for (int i = k + 1; i < n; ++i) {
+            double factor = Ab(i, k) / Ab(k, k);
+            for (int j = k; j < n + 1; ++j) {
+                Ab(i, j) -= factor * Ab(k, j);
+            }
+        }
     }
     
-    return lu.solve(b);
+    // Обратный ход метода Гаусса
+    Eigen::VectorXd x(n);
+    for (int i = n - 1; i >= 0; --i) {
+        x(i) = Ab(i, n)/Ab(i, i);
+        for (int j = i - 1; j >= 0; --j) {
+            Ab(j, n) -= Ab(j, i) * x(i);
+        }
+    }
+    
+    return x;
 }
 
-void GaussSolver::readSystemFromCSV(const std::string& filename, 
-                                  Eigen::MatrixXd& A, 
-                                  Eigen::VectorXd& b) {
+void GaussSolver::readSystemFromCSV(const std::string& filename, Eigen::MatrixXd& A, Eigen::VectorXd& b) {
     std::ifstream file(filename);
-    if (!file) {
-        throw std::runtime_error("Failed to open file: " + filename);
-    }
+    if (!file) { throw std::runtime_error("Не удалось открыть файл. Печалька...: " + filename); }
 
     std::vector<double> buffer;
     std::string line;
     int rows = 0;
     int cols = 0;
 
-    // Первый проход для определения размеров
+    // Сначала считаем количество строк и столбцов
     while (std::getline(file, line)) {
         std::stringstream ss(line);
         std::string cell;
@@ -57,21 +77,18 @@ void GaussSolver::readSystemFromCSV(const std::string& filename,
 
         if (rows == 0) {
             cols = current_cols;
-        } else if (current_cols != cols) {
-            throw std::runtime_error("Inconsistent column count in CSV");
-        }
+        } else if (current_cols != cols) { throw std::runtime_error("Хм-м-м... количество столбцов в CSV не совпадает."); }
+        
         rows++;
     }
 
-    // Проверка на квадратную матрицу + вектор
-    if (cols != rows + 1) {
-        throw std::runtime_error("Invalid system dimensions in CSV");
-    }
+    // Проверяем, что матрица квадраттная и есть вектор b
+    if (cols != rows + 1) { throw std::runtime_error("Неправильные размеры системы в CSV. ヽ(°□° )ノ"); }
 
     A.resize(rows, rows);
     b.resize(rows);
 
-    // Заполнение матрицы и вектора
+    // Заполняем саму матрицу A и еще вектор b
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < rows; ++j) {
             A(i, j) = buffer[i * cols + j];
@@ -80,12 +97,9 @@ void GaussSolver::readSystemFromCSV(const std::string& filename,
     }
 }
 
-void GaussSolver::writeSolutionToCSV(const std::string& filename, 
-                                   const Eigen::VectorXd& solution) {
+void GaussSolver::writeSolutionToCSV(const std::string& filename, const Eigen::VectorXd& solution) {
     std::ofstream file(filename);
-    if (!file) {
-        throw std::runtime_error("Failed to create file: " + filename);
-    }
+    if (!file) { throw std::runtime_error("Не удалось создать файл. Печалька...: " + filename); }
 
     const int n = solution.size();
     for (int i = 0; i < n; ++i) {
@@ -94,37 +108,22 @@ void GaussSolver::writeSolutionToCSV(const std::string& filename,
     }
 }
 
-void GaussSolver::generateRandomSystem(Eigen::MatrixXd& A, 
-                                     Eigen::VectorXd& b, 
-                                     int size, 
-                                     unsigned int seed,
-                                     bool make_diagonally_dominant) {
-    if (size <= 0) {
-        throw std::invalid_argument("System size must be positive");
-    }
+void GaussSolver::generateRandomSystem(Eigen::MatrixXd& A, Eigen::VectorXd& b, int size, unsigned int seed) {
+    if (size <= 0) { throw std::invalid_argument("Размер системы должен быть положительным. ヽ(°□° )ノ"); }
 
-    // Изменяем размер матрицы A до size x size
-    // Изменяем размер вектора b до size
     A.resize(size, size);
     b.resize(size);
 
-    // Воспроизводимый генератор
+    // Генератор случайных чисел
     std::mt19937 gen(seed);
-    std::uniform_real_distribution<double> dist(-10.0, 10.0);
+    std::uniform_real_distribution<double> dist(-50.0, 50.0);
 
-    // Заполнение матрицы и вектора
+    // Заполняем матрицу и вектор случайными числами
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
             A(i, j) = dist(gen);
         }
+        
         b(i) = dist(gen);
-    }
-
-    // Делаем матрицу диагонально доминирующей если требуется (на вский пожарный)
-    if (make_diagonally_dominant) {
-        for (int i = 0; i < size; ++i) {
-            double row_sum = A.row(i).cwiseAbs().sum() - std::abs(A(i, i));
-            A(i, i) = row_sum + 1.0; // Гарантируем преобладание
-        }
     }
 }

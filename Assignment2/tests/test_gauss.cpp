@@ -131,3 +131,37 @@ TEST_F(GaussSolverTest, LargeSystem) {
     double residual = (A * solution - b).norm();
     EXPECT_LT(residual, 1e-8);
 }
+
+TEST_F(GaussSolverTest, PartiallyDegenerate) {
+    Eigen::MatrixXd A(3,3);
+    A << 1, 2, 3,
+         0, 0, 0,
+         4, 5, 6;
+    Eigen::VectorXd b(3);
+    b << 6, 0, 15;
+    EXPECT_THROW(GaussSolver::solve(A, b), std::runtime_error);
+}
+
+TEST_F(GaussSolverTest, BackSubstitutionAccuracy) {
+    Eigen::MatrixXd A(4,4);
+    A << 1, 2, 3, 4,
+         0, 1, 2, 3,
+         0, 0, 1, 2,
+         0, 0, 0, 1;
+    Eigen::VectorXd b(4);
+    b << 10, 6, 3, 1;
+    
+    Eigen::VectorXd solution = GaussSolver::solve(A, b);
+    Eigen::VectorXd expected(4);
+    expected << 1, 1, 1, 1;
+    EXPECT_TRUE(solution.isApprox(expected, 1e-10));
+}
+
+TEST_F(GaussSolverTest, InconsistentSystem) {
+    Eigen::MatrixXd A(2,2);
+    A << 1, 1,
+         1, 1;
+    Eigen::VectorXd b(2);
+    b << 1, 2;
+    EXPECT_THROW(GaussSolver::solve(A, b), std::runtime_error);
+}

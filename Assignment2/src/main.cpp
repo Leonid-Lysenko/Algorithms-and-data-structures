@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <input_csv> [output_csv]" << std::endl;
+        std::cerr << "Использование: " << argv[0] << " <входной_файл.csv> [выходной_файл.csv]" << std::endl;
         return 1;
     }
     
@@ -15,20 +15,20 @@ int main(int argc, char* argv[]) {
         Eigen::MatrixXd A;
         Eigen::VectorXd b;
         
-        // Чтение системы из файла
+        // Читаем систему из файла
         GaussSolver::readSystemFromCSV(argv[1], A, b);
         
-        // Решение системы
+        // Решаем систему
         Eigen::VectorXd solution = GaussSolver::solve(A, b);
         
-        // Вывод результата
+        // Выводим результат
         if (argc >= 3) {
             GaussSolver::writeSolutionToCSV(argv[2], solution);
         } else {
-            std::cout << "Solution:\n" << solution << std::endl;
+            std::cout << "Решение:\n" << solution << std::endl;
         }
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Ошибка: " << e.what() << std::endl;
         return 1;
     }
     

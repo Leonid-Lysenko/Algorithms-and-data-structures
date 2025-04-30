@@ -19,17 +19,17 @@ cd build
 
     Создайте тестовые файлы:
 
-echo "2,1,5" > test_system.csv
-echo "1,-1,1" >> test_system.csv
+echo "1,1,1,2" > test_system.csv
+echo "3,-2,5,1" >> test_system.csv
+echo "4,3,-2,7" >> test_system.csv
 
     Запустите программу:
 
 ./gauss_solver test_system.csv test_solution.csv
 
-    Проверьте решение:
+    Проверьте решение (должно вывести: 1,1,0):
 
 cat test_solution.csv
-# Должно вывести: 2,1
 
 ## Автор
 
