@@ -38,7 +38,6 @@ std::vector<SymbolInfo> CalculateSymbolFrequencies(const std::string& filename, 
         [](const SymbolInfo& a, const SymbolInfo& b) {
             return a.frequency > b.frequency;
         });
-
     return frequency_table;
 }
 
@@ -46,12 +45,33 @@ void SaveCompressedData(const std::string& content, const std::map<char, std::st
     std::ofstream compressed_file("encoded", std::ios::binary);
     std::ofstream dictionary_file("dictionary");
 
-    for (char ch : content) {
-        compressed_file << encoding_table.at(ch);
+    dictionary_file << content.length() << '\n';
+
+    // Записываем словарь
+    for (const auto& pair : encoding_table) {
+        dictionary_file << pair.first << '|' << pair.second << '\n';
     }
 
-    for (const auto& pair : encoding_table) {
-        dictionary_file << pair.first << '|' << pair.second <<'\n';
+    // Побитовая запись
+    unsigned char current_byte = 0;
+    int bits_written = 0;
+
+    for (char ch : content) {
+        for (char code_bit : encoding_table.at(ch)) {
+            if (code_bit == '1') {
+                current_byte |= (1 << (7-bits_written));
+            }
+            bits_written++;
+
+            if (bits_written == 8) {
+                compressed_file.put(current_byte);
+                current_byte = 0;
+                bits_written = 0;
+            }
+        }
+    }
+    if (bits_written > 0) {
+        compressed_file.put(current_byte);
     }
 }
 

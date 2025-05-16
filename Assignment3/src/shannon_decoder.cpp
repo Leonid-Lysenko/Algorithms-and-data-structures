@@ -13,6 +13,8 @@ void DecodeCompressedFile() {
 
     std::map<std::string, char> decoding_map;
     std::string dictionary_line;
+    std::getline(dictionary_file, dictionary_line);
+    const size_t expected_symbols = std::stoul(dictionary_line);
 
     // Читаем словарь построчно
     while (std::getline(dictionary_file, dictionary_line)) {
@@ -21,14 +23,24 @@ void DecodeCompressedFile() {
         decoding_map[code] = symbol;
     }
 
-    // Декодинг
-    std::string current_code;
-    char bit;
-    while (encoded_file.get(bit)) {
-        current_code += bit;
-        if (decoding_map.count(current_code)) {
-            decoded_file << decoding_map[current_code];
-            current_code.clear();
+    // Декодинг с побитовым чтением
+    std::string accumulated_bits;
+    size_t symbols_decoded = 0;
+    unsigned char input_byte;
+
+    while (encoded_file.read(reinterpret_cast<char*>(&input_byte), 1)) {
+        for (int bit_position = 7; bit_position >= 0; --bit_position) {
+            accumulated_bits += (input_byte & (1 << bit_position)) ? '1' : '0';
+            auto code_match = decoding_map.find(accumulated_bits);
+            if (code_match != decoding_map.end()) {
+                decoded_file << code_match->second;
+                accumulated_bits.clear();
+                symbols_decoded++;
+
+                if (symbols_decoded == expected_symbols) {
+                    return;
+                }
+            }
         }
     }
 }
